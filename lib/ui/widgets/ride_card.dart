@@ -1,5 +1,3 @@
-//Widget for individual Ride card
-// lib/ui/widgets/ride_card.dart
 import 'package:flutter/material.dart';
 
 class RideCard extends StatelessWidget {
@@ -25,6 +23,7 @@ class RideCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Image section
           Image.network(
             imageUrl,
             height: 150,
@@ -37,9 +36,14 @@ class RideCard extends StatelessWidget {
               children: [
                 Icon(Icons.location_on, color: Colors.blue),
                 SizedBox(width: 4.0),
-                Text(startLocation),
-                Spacer(),
+                Expanded(
+                  child: Text(
+                    startLocation,
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
                 IconButton(
+                  splashColor: Colors.red.withOpacity(0.3), // Ripple effect
                   icon: Icon(
                     isBookmarked ? Icons.favorite : Icons.favorite_border,
                     color: isBookmarked ? Colors.red : Colors.grey,
@@ -55,7 +59,10 @@ class RideCard extends StatelessWidget {
               children: [
                 Icon(Icons.flag, color: Colors.green),
                 SizedBox(width: 4.0),
-                Text(endLocation),
+                Text(
+                  endLocation,
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
               ],
             ),
           ),

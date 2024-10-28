@@ -1,70 +1,78 @@
-//Main screen for showing Ride history
-
-// lib/ui/screens/ride_history_screen.dart
 import 'package:flutter/material.dart';
-import '../widgets/ride_card.dart';
-import '../widgets/scroll_to_top_button.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../bloc/ride_bloc.dart';
 
-class RideHistoryScreen extends StatefulWidget {
-  @override
-  _RideHistoryScreenState createState() => _RideHistoryScreenState();
-}
-
-class _RideHistoryScreenState extends State<RideHistoryScreen> {
+class RideHistoryScreen extends StatelessWidget {
   final ScrollController _scrollController = ScrollController();
-  bool _showScrollToTopButton = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(() {
-      if (_scrollController.offset > 300) {
-        setState(() => _showScrollToTopButton = true);
-      } else {
-        setState(() => _showScrollToTopButton = false);
-      }
-    });
-  }
-
-  void _scrollToTop() {
-    _scrollController.animateTo(
-      0,
-      duration: Duration(seconds: 1),
-      curve: Curves.easeInOut,
-    );
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Suggested Routes"),
+        title: Text('Suggested Routes'),
       ),
-      body: ListView.builder(
-        controller: _scrollController,
-        itemCount: 8,  // This will be dynamic once we integrate BLoC and API
-        itemBuilder: (context, index) {
-          return RideCard(
-            // Replace with actual data once available
-            imageUrl: 'https://via.placeholder.com/300',
-            startLocation: 'Start Location $index',
-            endLocation: 'End Location $index',
-            isBookmarked: false,
-            onBookmarkToggle: (isBookmarked) {
-              // Handle toggle action
-            },
-          );
+      body: BlocBuilder<RideBloc, RideState>(
+        builder: (context, state) {
+          if (state is RideLoading) {
+            return Center(child: CircularProgressIndicator());
+          } else if (state is RideError) {
+            return Center(child: Text('Error: ${state.message}'));
+          } else if (state is RideLoaded) {
+            return NotificationListener<ScrollNotification>(
+              onNotification: (ScrollNotification scrollInfo) {
+                if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent) {
+                  // Load more data if needed
+                  context.read<RideBloc>().add(FetchRides()); // Adjust this line to trigger more data fetching
+                }
+                return true;
+              },
+              child: ListView.builder(
+                controller: _scrollController,
+                itemCount: state.rides.length,
+                itemBuilder: (context, index) {
+                  final ride = state.rides[index];
+                  return Card(
+                    child: Column(
+                      children: [
+                        Image.network(ride.image),
+                        ListTile(
+                          title: Text(ride.startLoc),
+                          subtitle: Text(ride.endLoc),
+                          trailing: IconButton(
+                            icon: Icon(
+                              ride.bookmarked ? Icons.favorite : Icons.favorite_border,
+                              color: ride.bookmarked ? Colors.red : null,
+                            ),
+                            onPressed: () {
+                              context.read<RideBloc>().add(
+                                ToggleBookmark(
+                                  routeId: ride.id,
+                                  isBookmarked: ride.bookmarked,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            );
+          }
+          return Container();
         },
       ),
-      floatingActionButton: _showScrollToTopButton
-          ? ScrollToTopButton(onPressed: _scrollToTop)
-          : null,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _scrollController.animateTo(
+            0,
+            duration: Duration(milliseconds: 300),
+            curve: Curves.easeIn,
+          );
+        },
+        child: Icon(Icons.arrow_upward),
+      ),
     );
   }
 }
