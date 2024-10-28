@@ -1,0 +1,1 @@
+//Ride model to represent API data
